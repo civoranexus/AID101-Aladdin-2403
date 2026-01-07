@@ -1,5 +1,5 @@
-rainfall,temperature,fertilizer,yield
-120,28,50,3.2
-90,32,40,2.5
-150,25,60,4.0
-110,30,55,3.0
+rainfall,temperature,fertilizer,crop,yield
+120,28,50,0,3.2
+90,32,40,1,2.8
+150,25,60,2,4.1
+110,30,55,0,3.0

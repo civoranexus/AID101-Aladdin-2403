@@ -7,14 +7,23 @@ import os
 
 router = APIRouter(tags=["Yield Prediction"])
 
+# Load trained ML model
 model = joblib.load("yield_model.pkl")
 
+CROP_MAPPING = {
+    "wheat": 0,
+    "rice": 1,
+    "maize": 2
+}
+
+# Weather API config
 WEATHER_API_KEY = "8877041cd9715b9fc45e993e8b0e984c"
 
 WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 class YieldResponse(BaseModel):
     predicted_yield: float
+    crop: str
     city: str
     temperature: float
     rainfall: float
@@ -37,6 +46,11 @@ class YieldResponse(BaseModel):
     """
 )
 def predict_yield(
+    crop: str = Query(
+        ...,
+        description="Crop type (wheat, rice, maize)",
+        examples={"default": {"value": "wheat"}}
+    ),
     rainfall: float = Query(
         ...,
         description="Total rainfall during the crop season (in mm)",
@@ -53,6 +67,19 @@ def predict_yield(
         examples={"example": {"value": "Delhi"}}
     )
 ):
+    
+    crop = crop.lower()
+
+    if crop not in CROP_MAPPING:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid crop. Choose from wheat, rice, or maize."
+        )
+
+    crop_code = CROP_MAPPING[crop]
+
+
+    # 1️⃣ Fetch live weather
     params = {
         "q": city,
         "appid": WEATHER_API_KEY,
@@ -65,12 +92,15 @@ def predict_yield(
 
     temperature = weather["main"]["temp"]
 
-    df = pd.DataFrame([[rainfall, temperature, fertilizer]],
-                      columns=["rainfall", "temperature", "fertilizer"])
+    # 2️⃣ ML prediction
+    df = pd.DataFrame(
+    [[rainfall, temperature, fertilizer, crop_code]],
+    columns=["rainfall", "temperature", "fertilizer", "crop"])
     prediction = model.predict(df)[0]
 
     return {
         "predicted_yield": round(prediction, 2),
+        "crop": crop,
         "city": city,
         "temperature": temperature,
         "rainfall": rainfall,
