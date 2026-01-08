@@ -122,7 +122,7 @@ your-project/
 ├── tests/                # Test files
 ├── package.json          # Dependencies
 └── README.md             # Documentation
-```
+``
 
 ---
 
