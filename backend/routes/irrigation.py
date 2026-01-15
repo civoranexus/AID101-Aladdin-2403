@@ -12,7 +12,24 @@ model = joblib.load("irrigation_model.pkl")
 CROP_WATER_FACTOR = {
     "wheat": 1.0,
     "rice": 1.3,
-    "maize": 0.9
+    "maize": 0.95,
+    "sugarcane": 1.4,
+    "cotton": 1.1,
+    "potato": 1.05,
+    "onion": 0.9,
+    "tomato": 1.0,
+    "mustard": 0.85,
+    "groundnut": 0.9,
+    "soybean": 1.0,
+    "sunflower": 0.95,
+    "chickpea": 0.8,
+    "pigeonpea": 0.85,
+    "lentil": 0.8,
+    "sorghum": 0.9,
+    "pearlmillet": 0.85,
+    "barley": 0.9,
+    "jute": 1.2,
+    "tea": 1.1
 }
 
 # Weather API config
