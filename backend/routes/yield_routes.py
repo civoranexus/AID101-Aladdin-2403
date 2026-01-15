@@ -13,7 +13,24 @@ model = joblib.load("yield_model.pkl")
 CROP_MAPPING = {
     "wheat": 0,
     "rice": 1,
-    "maize": 2
+    "maize": 2,
+    "sugarcane": 3,
+    "cotton": 4,
+    "potato": 5,
+    "onion": 6,
+    "tomato": 7,
+    "mustard": 8,
+    "groundnut": 9,
+    "soybean": 10,
+    "sunflower": 11,
+    "chickpea": 12,
+    "pigeonpea": 13,
+    "lentil": 14,
+    "sorghum": 15,
+    "pearlmillet": 16,
+    "barley": 17,
+    "jute": 18,
+    "tea": 19    
 }
 
 # Weather API config
