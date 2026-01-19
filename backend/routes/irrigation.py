@@ -9,28 +9,33 @@ router = APIRouter()
 # Load trained ML model
 model = joblib.load("irrigation_model.pkl")
 
-CROP_WATER_FACTOR = {
-    "wheat": 1.0,
-    "rice": 1.3,
-    "maize": 0.95,
-    "sugarcane": 1.4,
-    "cotton": 1.1,
-    "potato": 1.05,
-    "onion": 0.9,
-    "tomato": 1.0,
-    "mustard": 0.85,
-    "groundnut": 0.9,
-    "soybean": 1.0,
-    "sunflower": 0.95,
-    "chickpea": 0.8,
-    "pigeonpea": 0.85,
-    "lentil": 0.8,
-    "sorghum": 0.9,
-    "pearlmillet": 0.85,
-    "barley": 0.9,
-    "jute": 1.2,
-    "tea": 1.1
-}
+CROP_WATER_FACTOR = {crop: 1.0 for crop in [
+    "wheat","rice","maize","sugarcane","cotton","potato","onion","tomato","mustard",
+    "groundnut","soybean","sunflower","chickpea","pigeonpea","lentil","sorghum",
+    "pearlmillet","barley","jute","tea","coffee","banana","mango","orange","apple",
+    "grapes","papaya","pomegranate","guava","watermelon","muskmelon","pineapple",
+    "coconut","cashew","arecanut","rubber","cocoa","brinjal","cauliflower","cabbage",
+    "carrot","radish","peas","beans","okra","spinach","capsicum","cucumber","pumpkin",
+    "bottle_gourd","bitter_gourd","ridge_gourd","garlic","ginger","turmeric","chilli",
+    "coriander","cumin","fennel","fenugreek","cardamom","clove","black_pepper",
+    "cinnamon","bay_leaf","safflower","sesame","castor","linseed","niger","moong",
+    "urad","masoor","rajma","cowpea","mothbean","horsegram","kidneybean","tobacco",
+    "bajra","jowar","ragi","foxtail_millet","little_millet","kodo_millet","barnyard_millet",
+    "proso_millet","amaranth","sugarbeet","sweet_potato","tapioca","jackfruit","litchi",
+    "custard_apple","fig","date_palm","jamun","kiwi","strawberry","dragon_fruit"
+]}
+
+# Higher water requirement crops
+CROP_WATER_FACTOR["rice"] = 1.3
+CROP_WATER_FACTOR["sugarcane"] = 1.4
+CROP_WATER_FACTOR["banana"] = 1.2
+CROP_WATER_FACTOR["jute"] = 1.2
+
+# Lower water requirement crops
+CROP_WATER_FACTOR["chickpea"] = 0.85
+CROP_WATER_FACTOR["lentil"] = 0.85
+CROP_WATER_FACTOR["pearlmillet"] = 0.85
+CROP_WATER_FACTOR["bajra"] = 0.85
 
 # Weather API config
 WEATHER_API_KEY = "8877041cd9715b9fc45e993e8b0e984c"
@@ -45,7 +50,7 @@ def predict_irrigation(
 
     crop = crop.lower()
     if crop not in CROP_WATER_FACTOR:
-        return {"error": "Crop must be wheat, rice, or maize"}
+        return {"error": "Invalid crop name"}
 
     # 1️⃣ Fetch live weather
     params = {
@@ -55,6 +60,9 @@ def predict_irrigation(
     }
     weather = requests.get(WEATHER_URL, params=params).json()
 
+    if "main" not in weather:
+        return {"error": "Weather data not available", "api_response": weather}
+
     temperature = weather["main"]["temp"]
     humidity = weather["main"]["humidity"]
     condition = weather["weather"][0]["description"]
@@ -63,7 +71,7 @@ def predict_irrigation(
     df = pd.DataFrame([[soil_moisture, temperature]],
                       columns=["soil_moisture", "temperature"])
     water = model.predict(df)[0]
-    water *= CROP_WATER_FACTOR[crop]
+    water *= CROP_WATER_FACTOR.get(crop, 1.0)
 
     # 3️⃣ Rule-based adjustments
     reasons = []
@@ -71,8 +79,12 @@ def predict_irrigation(
     if "rain" in condition.lower():
         return {
             "recommended_water_mm": 0,
-            "reason": "Rain detected in weather forecast",
-            "weather": condition
+            "crop": crop,
+            "city": city,
+            "temperature": temperature,
+            "humidity": humidity,
+            "weather": condition,
+            "reason": "Rain detected"
         }
 
     if temperature <= 18:
