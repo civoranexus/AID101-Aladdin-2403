@@ -53,3 +53,8 @@ temp/
 # Package lock files (optional - uncomment if needed)
 # package-lock.json
 # yarn.lock
+
+# ML model files (large)
+*.pkl
+backend/yield_model.pkl
+backend/irrigation_model.pkl
