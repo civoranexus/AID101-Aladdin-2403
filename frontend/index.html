@@ -1,13 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriAssist AI Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-<h2>AgriAssist AI Dashboard</h2>
-<button onclick="predict()">Predict Yield</button>
-<p id="result"></p>
 
-<script src="script.js"></script>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">AI</div>
+      <div>
+        <h1>AgriAssist AI</h1>
+        <p>Smart Yield & Irrigation Recommendations</p>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn ghost" id="btnRefresh">Refresh</button>
+      <a class="btn primary" href="http://127.0.0.1:8000/docs" target="_blank">API Docs</a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="hero">
+      <div class="hero-left">
+        <h2>Crop Intelligence Dashboard</h2>
+        <p>
+          Predict <b>Yield</b> and get <b>Irrigation recommendations</b> using ML + Real-time Weather.
+        </p>
+
+        <div class="hero-badges">
+          <span class="badge">FastAPI</span>
+          <span class="badge">ML Models</span>
+          <span class="badge">Live Weather</span>
+          <span class="badge">Chart Insights</span>
+          <span class="badge">100 Crops</span>
+        </div>
+
+        <!-- ✅ Weather Widget -->
+        <div class="weather-card">
+          <div class="weather-head">
+            <div>
+              <div class="weather-title">Live Weather</div>
+              <div class="weather-sub" id="weatherCityLabel">City: Delhi</div>
+            </div>
+            <button class="btn ghost small" id="btnWeatherRefresh">Update</button>
+          </div>
+
+          <div class="weather-grid">
+            <div class="weather-metric">
+              <div class="weather-label">Temperature</div>
+              <div class="weather-value"><span id="wTemp">--</span>°C</div>
+            </div>
+            <div class="weather-metric">
+              <div class="weather-label">Humidity</div>
+              <div class="weather-value"><span id="wHum">--</span>%</div>
+            </div>
+            <div class="weather-metric wide">
+              <div class="weather-label">Condition</div>
+              <div class="weather-value" id="wCond">--</div>
+            </div>
+          </div>
+
+          <div class="weather-note muted">
+            Weather fetched from your backend endpoint: <b>/weather?city=...</b>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hero-right">
+        <div class="mini-card">
+          <div class="mini-title">System Status</div>
+          <div class="status-row">
+            <span class="dot" id="apiDot"></span>
+            <span id="apiStatus">Checking backend...</span>
+          </div>
+          <div class="mini-metrics">
+            <div class="metric">
+              <div class="metric-label">Backend</div>
+              <div class="metric-value" id="backendUrl">127.0.0.1:8000</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Frontend</div>
+              <div class="metric-value">Live</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-title">Quick Tip</div>
+          <p class="muted">
+            Use realistic seasonal rainfall (mm) for Yield. Soil moisture (%) is best for Irrigation.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <!-- Yield Prediction -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Yield Prediction</h3>
+            <p class="muted">Uses ML + live temperature from Weather API</p>
+          </div>
+          <span class="chip navy">ML</span>
+        </div>
+
+        <!-- ✅ Crop Search -->
+        <div class="search-wrap">
+          <label class="search-label">Search Crop</label>
+
+          <div class="suggestion-box">
+            <input id="yieldCropSearch" class="search-input" placeholder="Type crop name (e.g. wheat, rice, mango)" autocomplete="off" />
+            <div id="yieldSuggestions" class="suggestions hidden"></div>
+          </div>
+
+          <small class="muted">Tip: type and pick crop from suggestions.</small>
+        </div>
+
+
+        <form id="yieldForm" class="form">
+          <div class="field">
+            <label>Crop</label>
+            <select id="yieldCrop" required>
+              <option value="" selected disabled>Select a crop</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>City</label>
+            <input id="yieldCity" placeholder="e.g. Delhi" required />
+          </div>
+
+          <div class="field">
+            <label>Seasonal Rainfall (mm)</label>
+            <input id="yieldRainfall" type="number" min="0" step="0.01" value="" required />
+          </div>
+
+          <div class="field">
+            <label>Fertilizer (kg/acre)</label>
+            <input id="yieldFertilizer" type="number" min="0" step="0.01" value="" required />
+          </div>
+
+          <button class="btn primary full" type="submit">Predict Yield</button>
+        </form>
+
+        <div class="result" id="yieldResult">
+          <div class="result-title">Output</div>
+          <pre id="yieldOutput">{}</pre>
+        </div>
+      </div>
+
+      <!-- Irrigation Prediction -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Irrigation Recommendation</h3>
+            <p class="muted">Uses ML + crop factor + live weather adjustments</p>
+          </div>
+          <span class="chip teal">Smart</span>
+        </div>
+
+        <!-- ✅ Crop Search -->
+        <div class="search-wrap">
+          <label class="search-label">Search Crop</label>
+        
+          <div class="suggestion-box">
+            <input id="irrCropSearch" class="search-input" placeholder="Type crop name (e.g. rice, sugarcane, banana)" autocomplete="off" />
+            <div id="irrSuggestions" class="suggestions hidden"></div>
+          </div>
+        </div>
+
+
+        <form id="irrigationForm" class="form">
+          <div class="field">
+            <label>Crop</label>
+            <select id="irrCrop" required></select>
+          </div>
+
+          <div class="field">
+            <label>City</label>
+            <input id="irrCity" placeholder="e.g. Delhi" required />
+          </div>
+
+          <div class="field">
+            <label>Soil Moisture (%)</label>
+            <input id="soilMoisture" type="number" min="0" max="100" step="0.01" value="" required />
+          </div>
+
+          <button class="btn primary full" type="submit">Recommend Irrigation</button>
+        </form>
+
+        <div class="result" id="irrResult">
+          <div class="result-title">Output</div>
+          <pre id="irrOutput">{}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Yield Insights</h3>
+            <p class="muted">Recent predictions</p>
+          </div>
+          <span class="chip success">Charts</span>
+        </div>
+        <canvas id="yieldChart" height="130"></canvas>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Irrigation Insights</h3>
+            <p class="muted">Recommended water values</p>
+          </div>
+          <span class="chip success">Charts</span>
+        </div>
+        <canvas id="irrChart" height="130"></canvas>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>
+        <b>AgriAssist AI</b> — Built with FastAPI + ML + Weather API
+      </div>
+      <div class="muted">Theme: Teal / Navy UI</div>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
 </body>
 </html>
